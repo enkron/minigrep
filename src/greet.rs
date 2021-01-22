@@ -1,12 +1,11 @@
-use std::env;
+pub struct Hi {
+    pub name: Option<String>,
+    pub greetings: String,
+}
 
-pub fn say_hello() {
-    // The func parses command line arguments takes 2nd
-    // (coz 1st it is a function name itself) and prints greetings
-    // if there no arguments the func panics
-    let name = env::args().skip(1).next();
-    match name {
-        Some(n) => println!("Hello there. {}", n),
+pub fn say_hello(hi: Hi) {
+    match hi.name {
+        Some(n) => println!("{} {}", hi.greetings, n),
         None => println!("Didn't recieve any name"),
     }
 }
