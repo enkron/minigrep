@@ -1,29 +1,9 @@
-mod greet;
-
-use std::env;
+pub mod greet;
 
 fn main() {
-    let name = env::args().skip(1).next();
-    // The func env::args() parses command line arguments takes 2nd
-    // coz 1st it is a function name itself
+    let mut user = greet::User::generate("Rinzler", "male", "white", 67);
+    println!("{:?}", user);
 
-    let user = greet::Hi {
-        name,
-        greetings: String::from("Greetings you!"),
-    };
-
-    greet::say_hello(user);
-
-    //testing closures
-    //let double_it = |x: u32| x * 2;
-    //let value = 5;
-    //let twice = double_it(value);
-    //println!("{} doubled is {}", value, twice);
-
-    //let multiple_value = |b: u32, c: u32| {
-    //    let z = b + c;
-    //    z * twice
-    //};
-    //let execute_closure = multiple_value(4, 7);
-    //println!("Result from closure: {}", execute_closure);
+    user.set_age(113);
+    println!("{:?}", user);
 }
