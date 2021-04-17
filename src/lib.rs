@@ -10,21 +10,23 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &str> {
-        if args.len() < 3 {
-            return Err("not enough arguments");
-        }
+    pub fn new(mut args: env::Args) -> Result<Config, &'static str> {
+        args.next();
 
-        let query = args[1].clone();
-        // Using the .clone() method to copy borrowed value from &[String]
-        // It is not efficient at all but for simplicity it is ok
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a query string"),
+        };
 
-        let filename = args[2].clone();
+        let filename = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a file name"),
+        };
 
         let mut case_sensitive = env::var("CASE_INSENSITIVE").is_err();
 
         if case_sensitive == true {
-            for arg in args.iter() {
+            for arg in args {
                 if arg == "-i" || arg == "--ignore-case" {
                     case_sensitive = false;
                 }
@@ -41,8 +43,9 @@ impl Config {
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(config.filename)?;
-    // Reads provided file into the string, if function will panic prints the message in .expect
-    // therefore we can conclude that .expect method only for programmer's information
+    // Reads provided file into the string, if function will panic prints the message
+    // in .expect therefore we can conclude that .expect method only for programmer's
+    // information
     // for more user-friendly output and error handling capabilities
     // it is better to return Result type
 
@@ -60,22 +63,14 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    // We need lifetime annotation here in function signature, because we need bound function
-    // parameter with return value: in this case we return string slice which is part of
-    // `content` value, therefore it has to live as long as `contents` lives
-    let mut results = Vec::new();
+    // We need lifetime annotation here in function signature, because we need bound
+    // function parameter with return value: in this case we return string slice which
+    // is part of `content` value, therefore it has to live as long as `contents` lives
 
-    for line in contents.lines() {
-        // Iterate through each line of the contents.
-        if line.contains(query) {
-            // Check whether the line contains our query string.
-            results.push(line);
-            // If it does, add it to the list of values we’re returning.
-            // If it doesn’t, do nothing.
-        }
-    }
-
-    results // Return the list of results that match.
+    contents
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect()
 }
 
 pub fn search_case_insensetive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
@@ -83,17 +78,12 @@ pub fn search_case_insensetive<'a>(query: &str, contents: &'a str) -> Vec<&'a st
     // The `query` is now String as .to_lowercase creates new data,
     // rather than referencing existing data
 
-    let mut results = Vec::new();
-
-    for line in contents.lines() {
-        if line.to_lowercase().contains(&query) {
-            // Since `query` is String we need to add `&` to the .contains method in order
-            // to pass string slice as a parameter
-            results.push(line);
-        }
-    }
-
-    results
+    contents
+        .lines()
+        .filter(|line| line.to_lowercase().contains(&query))
+        .collect()
+    // Since `query` is String we need to add `&` to the .contains method in order
+    // to pass string slice as a parameter
 }
 
 #[cfg(test)]
@@ -125,33 +115,5 @@ Trust me.";
             vec!["Rust:", "Trust me."],
             search_case_insensetive(query, contents)
         );
-    }
-
-    #[test]
-    fn return_true_struct_fields() {
-        let params = [
-            String::from("zero"),
-            String::from("one"),
-            String::from("two"),
-        ];
-        let config = Config::new(&params).unwrap();
-
-        assert_eq!(
-            vec![String::from("one"), String::from("two")],
-            vec![config.query, config.filename]
-        );
-    }
-
-    #[test]
-    #[should_panic]
-    fn run_will_panic_without_args() {
-        let params = [
-            String::from("zero"),
-            String::from("one"),
-            String::from("two"),
-        ];
-
-        let config = Config::new(&params).unwrap();
-        run(config).unwrap();
     }
 }
